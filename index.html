@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07080d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Pacifico&family=Dancing+Script:wght@700&family=Bangers&family=Lilita+One&family=Permanent+Marker&family=Poppins:wght@800&family=Montserrat:wght@800&family=Noto+Sans+Devanagari:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<title>VOX — Video Editor</title>
+</head>
+<body>
+<div class="app">
+<header class="topbar"><div class="top-actions"><button id="resetBtn" class="icon-btn" aria-label="Back">‹</button><button id="undoBtn" class="icon-btn" title="Undo">↶</button><button id="redoBtn" class="icon-btn" title="Redo">↷</button></div><div class="brand"><span class="brand-mark">V</span><div><b>VOX</b><small>VIDEO EDITOR · PRO</small></div></div><div class="top-actions"><button id="changeBtn" class="icon-btn hidden">Replace</button><button id="saveProjectBtn" class="icon-btn hidden">Save</button></div></header>
+<main>
+<section id="emptyState" class="empty-state">
+<div class="vox-orb">V</div>
+<h1>Edit videos like a pro.<br><span>Fast. Clean. Mobile-first.</span></h1>
+<p>Trim, trending captions, glow, fonts, filters &amp; export — सब कुछ browser में।</p>
+<label class="primary-btn">Choose video<input id="fileInput" type="file" accept="video/*" hidden></label>
+<div class="feature-row"><span>✂ Trim</span><span>CC Captions</span><span>✨ Glow</span><span>↗ Export</span></div>
+</section>
+
+<section id="editor" class="editor hidden">
+<div id="shell" class="preview-shell"><video id="video" playsinline preload="auto"></video><canvas id="cv"></canvas><button id="playBtn" class="play-center">▶</button><span id="durationBadge" class="badge">00:00</span></div>
+<div class="transport"><button id="playSmall" class="tbtn">▶</button><span id="timeLabel">00:00</span><input id="seek" type="range" min="0" max="1000" value="0"><button id="muteBtn" class="tbtn">🔊</button><button id="fitBtn" class="tbtn">⛶</button></div><div class="timeline-head"><b>Timeline</b><span id="timelineMeta">1 clip · 00:00</span></div>
+
+<div class="strip"><div id="chips"></div><button id="addClip">＋ Clip</button><button id="splitClip">✂ Split</button><button id="mvL">◀</button><button id="mvR">▶</button><button id="delClip">🗑</button><input id="clipFile" type="file" accept="video/*" multiple hidden></div>
+<div class="panel" data-p="edit">
+<div class="section-head"><div><b>Trim</b><small>Set your final clip</small></div><span id="trimLabel"></span></div>
+<div class="range-wrap"><div id="fill"></div><input id="startRange" type="range" min="0" max="100" value="0" step="0.01"><input id="endRange" type="range" min="0" max="100" value="100" step="0.01"></div>
+<div class="range-labels"><span id="startLabel">00:00</span><span id="endLabel">00:00</span></div>
+<div class="row"><button id="setStart" class="secondary-btn compact">⇤ Start = playhead</button><button id="setEnd" class="secondary-btn compact">End = playhead ⇥</button></div>
+<div class="section-head sp"><div><b>Adjust</b><small>Speed &amp; colour</small></div><button id="adjReset" class="icon-btn">Reset</button></div>
+<label class="slider">Speed<select id="speed"><option>0.5</option><option>0.75</option><option selected>1</option><option>1.25</option><option>1.5</option><option>2</option></select></label>
+<label class="slider">Speed ramp<select id="ramp"><option value="none">None</option><option value="hero">Hero time (बीच में slow-mo)</option><option value="end">Speed-up end</option><option value="start">Slow start</option><option value="pulse">Pulse</option></select></label>
+<label class="slider">Brightness<input id="fb" type="range" min="50" max="150" value="100"></label>
+<label class="slider">Contrast<input id="fc" type="range" min="50" max="150" value="100"></label>
+<label class="slider">Saturation<input id="fs" type="range" min="0" max="200" value="100"></label>
+</div>
+
+<div class="panel hidden" data-p="cap">
+<div class="section-head"><div><b>Captions</b><small>Auto, paste, or edit by hand</small></div><span id="captionStatus">Off</span></div>
+<div class="row"><select id="lang"><option value="hi-IN">हिंदी</option><option value="en-IN">English (IN)</option><option value="en-US">English (US)</option></select><button id="autoCaptionBtn" class="primary-btn compact">🎙 Generate captions</button><button id="stopCaptionBtn" class="secondary-btn compact" disabled>■ Stop</button></div>
+<p class="hint">Generate दबाते ही वीडियो शुरुआत से speaker पर चलेगा और फोन का microphone उसकी आवाज़ सुनकर transcript/captions बनाएगा। आवाज़ साफ़ रखें और mic permission दें। Chrome Android पर उपयोग करें। Word timing phrase के भीतर estimate होती है; browser speech recognition की availability/network पर निर्भर है।</p>
+<textarea id="transcript" placeholder="यहाँ transcript paste/type करें…"></textarea>
+<div class="row"><button id="buildBtn" class="primary-btn compact">⚡ Build captions</button><button id="addSeg" class="secondary-btn compact">+ Add line</button><button id="clearCaptionBtn" class="secondary-btn compact">Clear</button></div>
+<div id="segList" class="seglist"></div>
+</div>
+
+<div class="panel hidden" data-p="style">
+<div class="section-head"><div><b>Caption style</b><small>Trending presets — tap to apply</small></div></div>
+<div id="presets" class="styles"></div>
+<div class="grid2">
+<label class="slider">Font<select data-k="f"><option>Anton</option><option>Lilita One</option><option>Bangers</option><option>Permanent Marker</option><option>Poppins</option><option>Montserrat</option><option>Noto Sans Devanagari</option></select></label>
+<label class="slider">Animation<select data-k="an"><option value="blur">Blur-in</option><option value="pop">Pop</option><option value="slide">Slide-up</option><option value="fade">Fade</option><option value="drop">Drop</option><option value="zoom">Zoom-in</option><option value="rot">Tilt</option><option value="auto">🎲 Auto mix</option><option value="none">None</option></select></label>
+<label class="slider">2nd font<select data-k="f2"><option>Pacifico</option><option>Dancing Script</option><option>Permanent Marker</option></select></label>
+<label class="slider">Box<select data-k="bx"><option value="0">None</option><option value="1">Line box</option><option value="2">Word box</option></select></label>
+<label class="slider">Text<input type="color" data-k="c"></label>
+<label class="slider">Highlight<input type="color" data-k="h"></label>
+<label class="slider">Outline<input type="color" data-k="sc"></label>
+<label class="slider">Outline size<input type="range" data-k="st" min="0" max="10"></label>
+<label class="slider">Size<input type="range" data-k="sz" min="3" max="12" step=".5"></label>
+<label class="slider">Position<input type="range" data-k="y" min="10" max="92"></label>
+<label class="slider">Words/line<input type="range" data-k="wpl" min="1" max="6"></label>
+</div>
+<div class="chips"><label><input type="checkbox" data-k="up"> ABC</label><label><input type="checkbox" data-k="gl"> ✨ Glow</label><label><input type="checkbox" data-k="pop"> 💥 Pop</label><label><input type="checkbox" data-k="cmb"> 🔤 Combo</label></div>
+</div>
+
+<div class="panel hidden" data-p="ai">
+<div class="section-head"><div><b>AI Auto-Edit</b><small>Video drop करो — बाकी VOX करेगा</small></div></div>
+<button id="fullAuto" class="export-btn">🪄 Full Auto-Edit (captions + B-roll) <span>→</span></button>
+<label class="slider">Audio file → captions<input id="audCap" type="file" accept="audio/*,video/*" class="txt"></label>
+<div class="row"><button id="capOnly" class="secondary-btn compact">CC सिर्फ़ Captions generate</button></div>
+<label class="chips"><label><input type="checkbox" id="useBroll" checked> 🎞 Auto B-roll</label></label>
+<div id="aiStatus" class="status"></div>
+<div class="section-head sp"><div><b>API settings</b><small>Keys सिर्फ़ आपके browser में रहती हैं</small></div></div>
+<label class="slider">Preset<select id="apiPreset"><option value="https://api.groq.com/openai/v1|whisper-large-v3-turbo|llama-3.3-70b-versatile">Groq Whisper</option><option value="https://api.openai.com/v1|whisper-1|gpt-4o-mini">OpenAI Whisper</option></select></label>
+<label class="slider">API URL<input id="apiUrl" class="txt"></label>
+<label class="slider">Model<input id="apiModel" class="txt"></label>
+<label class="slider">API key<input id="apiKey" class="txt" type="password" placeholder="sk-… / gsk_…"></label>
+<label class="slider">Script<select id="script"><option value="roman">Roman (Hinglish)</option><option value="native">देवनागरी</option></select></label>
+<label class="slider">Chat model<input id="chatModel" class="txt"></label>
+<label class="slider">Language<select id="apiLang"><option value="">Auto</option><option value="hi">Hindi</option><option value="en">English</option></select></label>
+<label class="slider">Pexels key<input id="pexKey" class="txt" type="password" placeholder="B-roll के लिए (free)"></label>
+</div>
+
+<div class="panel hidden" data-p="fx">
+<div class="section-head"><div><b>Cuts · Transitions · SFX</b><small>Playhead से cut करो</small></div><span id="cutInfo">0 cuts</span></div>
+<div class="row"><button id="cutA" class="secondary-btn compact">① Mark start</button><button id="cutB" class="secondary-btn compact">② Cut to here</button><button id="cutSil" class="secondary-btn compact">🤫 Silences हटाओ</button><button id="cutClr" class="secondary-btn compact">Clear</button></div>
+<label class="slider">Transition<select id="tr"><option value="zoom">Zoom punch</option><option value="flash">Flash</option><option value="spin">Spin zoom</option><option value="shake">Shake</option><option value="blur">Blur punch</option><option value="wipe">Wipe</option><option value="fade">Dip to black</option><option value="none">None</option></select></label>
+<label class="slider">SFX<select id="sfxs"><option value="whoosh">Whoosh</option><option value="pop">Pop</option><option value="none">None</option></select></label>
+<label class="slider">Video effect<select id="vfx"><option value="">None</option><option value="bw">B&amp;W</option><option value="sepia">Vintage</option><option value="vivid">Vivid</option><option value="cine">Cinematic</option><option value="cool">Cool</option><option value="glitch">Glitch RGB</option><option value="vhs">VHS</option><option value="grain">Film grain</option><option value="shake">Handheld shake</option><option value="beat">Beat zoom</option><option value="kenburns">Slow zoom (Ken Burns)</option><option value="pixel">Pixelate</option><option value="flicker">Flicker</option><option value="invert">Invert</option><option value="dream">Dream</option><option value="duotone">Duotone</option><option value="poster">Posterize</option></select></label>
+<div class="section-head sp"><div><b>Background remove</b><small>AI person-segmentation (internet चाहिए)</small></div></div>
+<label class="slider">Mode<select id="bgm"><option value="off">Off</option><option value="blur">Blur</option><option value="color">Solid colour</option></select></label>
+<label class="slider">BG colour<input id="bgcol" type="color" value="#00b140"></label>
+<div class="section-head sp"><div><b>Overlay / PiP</b><small>Preview में drag करके हिलाओ</small></div><button id="ovDel" class="icon-btn">Remove</button></div>
+<label class="slider">Image/Video<input id="ovFile" type="file" accept="image/*,video/*" class="txt"></label>
+<label class="slider">Size<input id="ovS" type="range" min="10" max="100" value="35"></label>
+<label class="slider">Opacity<input id="ovA" type="range" min="10" max="100" value="100"></label>
+<label class="slider">Blend<select id="ovB"><option value="source-over">Normal</option><option value="screen">Screen</option><option value="multiply">Multiply</option><option value="overlay">Overlay</option><option value="lighten">Lighten</option><option value="difference">Difference</option><option value="soft-light">Soft light</option></select></label>
+<label class="slider">Mask<select id="ovM"><option value="none">None</option><option value="circle">Circle</option><option value="round">Rounded</option></select></label>
+<div class="section-head sp"><div><b>Chroma key (green screen)</b><small>चुना रंग हटकर नीचे का BG दिखेगा</small></div></div>
+<label class="slider">Key<select id="ck"><option value="off">Off</option><option value="on">On</option></select></label>
+<label class="slider">Key colour<input id="ckc" type="color" value="#00b140"></label>
+<label class="slider">Tolerance<input id="ckt" type="range" min="20" max="160" value="80"></label>
+<label class="slider">Behind colour<input id="ckbg" type="color" value="#14142b"></label>
+<div class="section-head sp"><div><b>Beat-sync</b><small>Music (या video audio) की beats पर zoom pulse</small></div><span id="beatInfo"></span></div>
+<div class="row"><button id="beatBtn" class="secondary-btn compact">🥁 Beats detect</button><label class="chips" style="margin:0"><label><input type="checkbox" id="beatOn" checked> Pulse on beat</label></label></div>
+<div class="section-head sp"><div><b>Voice enhancer</b><small>EQ + compressor + noise gate + limiter</small></div></div>
+<label class="slider">Voice<select id="voice"><option value="off">Off</option><option value="clear">Clear</option><option value="studio" selected>Studio</option></select></label>
+<div class="section-head sp"><div><b>Music / Audio</b></div></div>
+<label class="slider">Add audio<input id="musFile" type="file" accept="audio/*" class="txt"></label>
+<label class="slider">Music volume<input id="musV" type="range" min="0" max="100" value="35"></label>
+</div>
+
+<div class="panel hidden" data-p="stk">
+<div class="section-head"><div><b>Stickers</b><small>Tap = add · preview में drag करो</small></div></div>
+<div class="sticker-tabs"><button class="st-tab active" data-cat="all">All</button><button class="st-tab" data-cat="reaction">Reactions</button><button class="st-tab" data-cat="creator">Creator</button><button class="st-tab" data-cat="gaming">Gaming</button><button class="st-tab" data-cat="social">Social</button><button class="st-tab" data-cat="shape">Shapes</button></div>
+<div id="emo" class="emo"></div><div class="sticker-note">Built-in original sticker library — gallery से import की जरूरत नहीं।</div>
+<div class="row"><input id="stTxt" class="txt" placeholder="WOW! / SUBSCRIBE" style="flex:2"><input id="stCol" type="color" value="#ff2d55" style="flex:0 0 46px;height:38px;border:0;background:none"><button id="stAdd" class="secondary-btn compact">+ Text</button></div>
+<label class="slider">Image/PNG<input id="stImg" type="file" accept="image/*" class="txt"></label>
+<div class="section-head sp"><div><b>Selected</b></div><span id="stInfo">—</span></div>
+<label class="slider">Size<input id="stS" type="range" min="5" max="90" value="25"></label>
+<label class="slider">Animation<select id="stA"><option>pop</option><option>bounce</option><option>pulse</option><option>spin</option><option>shake</option><option>float</option><option>wiggle</option><option>drop</option><option>zoom</option><option>none</option></select></label>
+<div class="row"><button id="stIn" class="secondary-btn compact">In = playhead</button><button id="stOut" class="secondary-btn compact">Out = playhead</button><button id="stDel" class="secondary-btn compact">🗑</button></div>
+<div id="stList" class="seglist"></div>
+</div>
+
+<div class="panel hidden" data-p="pro">
+<div class="section-head"><div><b>Pro Canvas &amp; Transform</b><small>Frame, zoom, rotate, mirror &amp; composition</small></div><button id="proReset" class="icon-btn">Reset</button></div>
+<div class="pro-grid">
+<button class="secondary-btn compact ratio-btn" data-ratio="9:16">9:16</button><button class="secondary-btn compact ratio-btn" data-ratio="1:1">1:1</button><button class="secondary-btn compact ratio-btn" data-ratio="16:9">16:9</button><button class="secondary-btn compact ratio-btn" data-ratio="4:5">4:5</button>
+</div>
+<label class="slider">Zoom<input id="trScale" type="range" min="30" max="220" value="100"></label>
+<label class="slider">Rotate<input id="trRotate" type="range" min="-180" max="180" value="0"></label>
+<label class="slider">Position X<input id="trX" type="range" min="0" max="100" value="50"></label>
+<label class="slider">Position Y<input id="trY" type="range" min="0" max="100" value="50"></label>
+<label class="slider">Opacity<input id="trOpacity" type="range" min="0" max="100" value="100"></label>
+<label class="chips"><label><input id="trMirror" type="checkbox"> ↔ Mirror</label><label><input id="trContain" type="checkbox"> Fit inside</label></label>
+<label class="slider">Canvas background<input id="trBg" type="color" value="#000000"></label>
+<div class="pro-feature-grid"><div><b>PIP / Overlay</b><small>Image/video layer, resize, opacity, blend and mask.</small></div><div><b>Chroma Key</b><small>Green-screen removal with tolerance.</small></div><div><b>Beat Sync</b><small>Detect beats and pulse the edit.</small></div><div><b>Audio Studio</b><small>Music, SFX, voice EQ, compressor and limiter.</small></div></div>
+</div>
+<div class="panel hidden" data-p="export">
+<div class="section-head"><div><b>Export</b><small>Captions burned in · tab खुला रखें</small></div><span id="fmt">WEBM</span></div>
+<button id="exportBtn" class="export-btn">Export edited video <span>→</span></button>
+<div class="bar"><i id="bar"></i></div><div id="exportStatus" class="status"></div>
+<a id="downloadLink" class="download hidden">⬇ Download</a>
+</div>
+</section>
+</main>
+<div class="quick-tools hidden" id="quickTools"><button data-t="edit">✂<span>Edit</span></button><button data-t="cap">CC<span>Text</span></button><button data-t="stk">☻<span>Sticker</span></button><button data-t="fx">FX<span>Effects</span></button><button data-t="pro">▣<span>Canvas</span></button><button id="quickPip">PIP<span>Overlay</span></button><button data-t="ai">AI<span>Auto</span></button><button data-t="export">↗<span>Export</span></button></div><nav id="bottomNav" class="bottom-nav hidden"><button class="nav-item" data-t="stk">🎭<span>Stickers</span></button><button class="nav-item" data-t="pro">◈<span>Canvas</span></button><button class="nav-item" data-t="fx">🎬<span>Studio</span></button><button class="nav-item" data-t="ai">✨<span>Auto</span></button><button class="nav-item active" data-t="edit">✂<span>Edit</span></button><button class="nav-item" data-t="cap">CC<span>Captions</span></button><button class="nav-item" data-t="style">Aa<span>Style</span></button><button class="nav-item" data-t="export">↗<span>Export</span></button></nav>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

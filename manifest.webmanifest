@@ -1,0 +1,9 @@
+{
+  "name": "VOX Video Editor",
+  "short_name": "VOX",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#090b10",
+  "theme_color": "#090b10",
+  "icons": []
+}
